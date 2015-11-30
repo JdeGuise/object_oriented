@@ -575,7 +575,7 @@ public class AntiPacman extends JPanel {
   public static int[][] getBoard() {
 	  
 	//using supporting graphics jar found online, initialize int 2d array for board getter
-    final int[][] theMap = pacMap.pacMap.fnl.PacmanSupport.getMap();
+    final int[][] theMap = cs015.fnl.PacmanSupport.SupportMap.getMap();
     final int[][] theMapint = new int[theMap.length][theMap[0].length];
     
     for(int i = 0; i < theMap.length; i++) { 

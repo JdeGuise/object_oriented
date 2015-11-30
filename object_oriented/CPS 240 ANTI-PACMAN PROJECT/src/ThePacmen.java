@@ -8,7 +8,6 @@ import java.util.Queue;
 
 public class ThePacmen extends CharacterObject {
   
-  private static final Color FRIGHTENED_COLOR = Color.GREEN;
   private static final LocationPoint[] corners = {new LocationPoint(1, 21), new LocationPoint(21, 1), new LocationPoint(21, 21), new LocationPoint(1, 1)};
   
   private static final int WALL = -1;
@@ -94,15 +93,14 @@ public class ThePacmen extends CharacterObject {
   /** Move and change colors according to gameMode */
   public void move(final LocationPoint ghostLocation, final Mode gameMode) { 
     this.gameMode = gameMode;
-    setColor();
     
     if(gameMode == Mode.CHASE) {
-      lookFor = PLAYERGHOST;
+      lookFor = CORNER;
       startBreadthFirstAlgorithm(ghostLocation);
     }
     
     else if(gameMode == Mode.FRIGHTENED) {
-      lookFor = CORNER;
+      lookFor = PLAYERGHOST;
       startBreadthFirstAlgorithm(ghostLocation);
     }
     
@@ -126,17 +124,7 @@ public class ThePacmen extends CharacterObject {
       super.move(randomDirection);
     }
   }
-  
-  /**Change Ghost color based upon game mode */
-  private void setColor() { 
-    if(gameMode == Mode.FRIGHTENED) {
-      theColor = FRIGHTENED_COLOR;
-    }
-    else { 
-      theColor = startColor;
-    }
-  }
-  
+ 
   /**
    * Checks all 4 directions around the point If that item does not have my number and it's not a wall 
    * Add it to the queue and set its number to mine + 1
@@ -245,13 +233,13 @@ public class ThePacmen extends CharacterObject {
     if(thePoint.getX() >= theBoard.length || thePoint.getY() >= theBoard[0].length
          ||  thePoint.getX() < 0 || thePoint.getY() < 0) { 
       if(gameMode == Mode.CHASE) {
-        return PLAYERGHOST;
-      }
-      else if(gameMode == Mode.FRIGHTENED) { 
         return CORNER;
       }
-      else { 
+      else if(gameMode == Mode.FRIGHTENED) { 
         return PLAYERGHOST;
+      }
+      else { 
+        return CORNER;
       }
     }
     return theBoard[(int) thePoint.getY()][(int) thePoint.getX()];
