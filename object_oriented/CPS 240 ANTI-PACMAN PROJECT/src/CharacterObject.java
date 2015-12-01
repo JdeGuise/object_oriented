@@ -29,7 +29,7 @@ public abstract class CharacterObject {
   protected Color theColor;
   protected String name = "";
   
-  /** Constructor */
+  //Constructor
   public CharacterObject(final int x, final int y, final Color theColor){
     this.x = x;
     this.y = y;
@@ -42,9 +42,14 @@ public abstract class CharacterObject {
     facingDirection = Direction.UP;
   }
   
-  /** Updates the direction and either the X or Y coordinate of the object
-    * depending on the direction it is moving in 
-    @param direction to move in */
+  // enumeration for potential directions of movement
+  public enum Direction {
+    UP, DOWN, LEFT, RIGHT; 
+  }
+  
+  // Updates the direction and either the X or Y coordinate of the object
+  // depending on the direction it is moving in 
+  // param direction to move in
     public void move(Direction theD){
       
       if(theD == null) { 
@@ -86,7 +91,7 @@ public abstract class CharacterObject {
       }
     }
     
-    /** @return ProspectivePoint if the item were to move in that direction */
+    // return ProspectivePoint if the item were to move in that direction
     public LocationPoint getProspectivePoint(final Direction theDirection) {
       switch(theDirection) {
         case UP:
@@ -102,9 +107,9 @@ public abstract class CharacterObject {
       }
     }
     
-    /** @return ProspectivePoint if the item were to move in that direction a certain distance */
+    // return ProspectivePoint if the item were to move in that direction a certain distance
     public LocationPoint getProspectivePoint(final LocationPoint currentLoc, final Direction theDirection, final int units) {
-      final int x= currentLoc.getX();
+      final int x = currentLoc.getX();
       final int y = currentLoc.getY();
       switch(theDirection) {
         case UP:
@@ -120,7 +125,7 @@ public abstract class CharacterObject {
       }
     }
     
-    /** Returns a new Point from the given point and the direction */
+    // Returns a new LocationPoint from the given point and the direction
     public static LocationPoint getNewPoint(final LocationPoint theOriginal, final Direction theDirection) { 
       if(theOriginal == null || theDirection == null) { 
         return null;
@@ -140,7 +145,7 @@ public abstract class CharacterObject {
       }
     }
     
-    /** Return the opposite direction */
+    // Return the opposite direction
     public static Direction getOppositeDirection(final Direction theDirection) { 
       if(theDirection == Direction.RIGHT) { 
         return Direction.LEFT;
@@ -158,107 +163,102 @@ public abstract class CharacterObject {
         return null;
     }
     
-    /** Returns random direction */
+    // Returns random direction
     public static Direction getRandomDirection() { 
       return theDirections[theGenerator.nextInt(theDirections.length)];
     }
     
-    /** @param new point */
+    // param new point
     public void setPoint(final LocationPoint thePoint) {
       this.x = (int) thePoint.getX();
       this.y = (int) thePoint.getY();
     }
     
-    /** @return colorOfItem */  
+    // return item color  
     public Color getColor() { 
       return this.theColor;
     }
     
-    /** @param colorOfitem */
+    // set item color
     public void setColor(Color tC) { 
       this.theColor = tC; 
     }
     
-    /** @return startingXPosition */
+    // return starting X coord
     public int getStartX() {
       return this.startX; 
     }
     
-    /** @return startingYPosition */
+    // return starting Y coord
     public int getStartY() { 
       return this.startY;
     }
     
-    /** Returns the item to initial position by
-      * setting X and Y coordinates to the ones first given in the constructor */
+    // Returns the item to initial position by
+    // setting X and Y coordinates to the ones first given in the constructor
     public void returnToStartPosition() {
       this.x = this.startX;
       this.y = this.startY;
       this.facingDirection = Direction.UP;
     }
     
-    /** @return direction the item is facing */
+    // return Direction item is facing
     public Direction getFacingDirection() {
       return facingDirection;
     }
     
-    /** @param direction currently facing */
+    // set current facing Direction
     public void setFacingDirection(Direction facing) {
       this.facingDirection = facing;
     }
     
-    /** @param direction it is trying to face */
+    // set desired facing Direction
     public void setDesiredDirection(Direction desired) { 
       this.desiredDirection = desired;
     }
     
-    /**@return direction the item wants to go */
+    // get desired Direction
     public Direction getDesiredDirection() { 
       return this.desiredDirection;
     }
-    
-    /** Four possible directions to move in */
-    public enum Direction {
-      UP, DOWN, LEFT, RIGHT; 
-    }
-    
-    /** @return item x coordinate */
+   
+    // get current X coord
     public int getX() {
       return this.x;
     }
     
-    /** @return item y coordinate */
+    // get current Y coord
     public int getY() {
       return this.y;
     }
     
-    /** @param item's  x coordinate */
+    // set current X coord
     public void setX(int x) {
       this.x = x;
     }
     
-    /** @param item's  y coordinate */
+    // set current Y coord
     public void setY(int y) {
       this.y = y;
     }
     
-    /** @return Pointform of object's location */
+    // get current LocationPoint
     public LocationPoint getPoint() {
       return new LocationPoint(x, y);
     }
     
-    /** Sets the name of the item based on the color */
+    // name getter based on color
     private String getName() {
-      if(theColor == Color.YELLOW)
-        return "Yellow";
-      else if(theColor == Color.CYAN)
-        return "Blue (Cyan)";
-      else if(theColor == Color.PINK)
-        return "Pink";
-      else if(theColor == Color.ORANGE)
-        return "Orange";
+      if(theColor == Color.WHITE)
+        return "White";
       else if(theColor == Color.RED)
         return "Red";
+      else if(theColor == Color.BLUE)
+        return "Blue";
+      else if(theColor == Color.YELLOW)
+        return "Yellow";
+      else if(theColor == Color.GREEN)
+        return "Green";
       return "Error";
     }
 }

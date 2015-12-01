@@ -4,7 +4,7 @@ import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.Queue;
 
-/* ghost/player */
+// code for defining our Pacmen AI
 
 public class ThePacmen extends CharacterObject {
   
@@ -37,28 +37,28 @@ public class ThePacmen extends CharacterObject {
   private long startPenTime;
   private boolean isReleased = false;
   
-  /** Constructor */
-  public ThePacmen(Color theColor, int x, int y, final int[][] pacmanGrid, final Mode gameMode) {
+  // Constructor
+  public ThePacmen(Color theColor, int x, int y, final byte[][] board, final Mode gameMode) {
     super((int)x, (int)y, theColor);
     this.startColor = theColor;
     randomDistFromPacman = 0; //(int) theGenerator.nextInt(4);
     cornerPoint = getCorner(new LocationPoint(x, y));
     cornerLoc = cornerPoint;
     startPenTime = System.currentTimeMillis();
-    this.updateBoard(pacmanGrid);
+    this.updateBoard(board);
   }
   
-  /** Updates the ghost's internal board with the ghost's custom values */
-  public void updateBoard(final int[][] pacmanBoard) {
+  // Updates the pacmens' internal board with their custom values
+  public void updateBoard(final byte[][] board) {
     
     final LocationPoint pacmanP = new LocationPoint();
     
-    for (int i = 0; i < pacmanBoard.length; i++) {
-      for (int y = 0; y < pacmanBoard[i].length; y++) {
-        if (pacmanBoard[i][y] == AntiPacman.WALL) {
+    for (int i = 0; i < board.length; i++) {
+      for (int y = 0; y < board[i].length; y++) {
+        if (board[i][y] == AntiPacman.WALL) {
           this.theBoard[i][y] = this.WALL;
         }
-        else if(pacmanBoard[i][y] == AntiPacman.PLAYERGHOST) { 
+        else if(board[i][y] == AntiPacman.PLAYERGHOST) { 
           this.theBoard[i][y] = this.PACMEN;
           pacmanP.setX(i);
           pacmanP.setY(y);
@@ -68,18 +68,22 @@ public class ThePacmen extends CharacterObject {
         }
       }
     }
+    
+    //set AI locations and corner locations
     this.theBoard[this.y][this.x] = PACMEN;
     this.theBoard[cornerPoint.getY()][cornerPoint.getX()] = CORNER;
     
-    reassignPacman(pacmanP);
+    //method call to move pacmen around
+    reassignPacmen(pacmanP);
     
+    //set AI fixing point
     aPoint.setX(x);
     aPoint.setY(y);
   }
   
-  /** Re-assigns pacman to a point a random distance from Pacman's actual location
-    * Use is so that all the ghosts don't go for exactly Pacman */
-  private void reassignPacman(final LocationPoint pacmanPoint){
+  // Re-assigns pacmen to a point a random distance from The ghost's actual location 
+  // keeps the game from being too hard.
+  private void reassignPacmen(final LocationPoint pacmanPoint){
     for(Direction theDirection : theDirections) { 
       final LocationPoint directionDistance = getProspectivePoint(pacmanPoint, theDirection, randomDistFromPacman);
       if(itemAtPoint(directionDistance) != WALL) { 
@@ -90,7 +94,7 @@ public class ThePacmen extends CharacterObject {
     }
   }
   
-  /** Move and change colors according to gameMode */
+  // Move and change colors according to gameMode
   public void move(final LocationPoint ghostLocation, final Mode gameMode) { 
     this.gameMode = gameMode;
     
@@ -109,7 +113,7 @@ public class ThePacmen extends CharacterObject {
     }
   }
   
-  /**Scatter mode: Move randomly */
+  // Scatter mode: Move randomly
   private void scatterMode(final LocationPoint currentLoc) { 
     
     if(randomDirection == null) { 
@@ -125,10 +129,10 @@ public class ThePacmen extends CharacterObject {
     }
   }
  
-  /**
-   * Checks all 4 directions around the point If that item does not have my number and it's not a wall 
-   * Add it to the queue and set its number to mine + 1
-   */
+  //
+  // Checks all 4 directions around the point If that item does not have my number and it's not a wall 
+  // Add it to the queue and set its number to mine + 1
+  //
   private void availableInDirections(final LocationPoint current) {
     for (Direction theDirection : theDirections) {
       final LocationPoint newPoint = getNewPoint(current, theDirection);
@@ -140,6 +144,7 @@ public class ThePacmen extends CharacterObject {
         //Skip
       }
       
+      //if the point we see is what we want to see at the moment
       else if(itemAtPoint(newPoint) == lookFor) {
         setValue(newPoint, itemAtPoint(current) + 1);
         
@@ -165,7 +170,7 @@ public class ThePacmen extends CharacterObject {
     }
   }
   
-  /** Starts the BFA to find a point */
+  // Starts the BFA to find a point
   private void startBreadthFirstAlgorithm(final LocationPoint startPoint) {
     if(startPoint.equals(cornerPoint)) {
       cornerPoint = getCorner(startPoint);
@@ -184,7 +189,7 @@ public class ThePacmen extends CharacterObject {
     }
   }
   
-  /** Returns the direction to a get to the correct item. Item is based upon game mode */
+  // Returns the direction to a get to the correct item. Item is based upon game mode
   private Direction pacmanToGhost() { 
     int itemAtNow = 0;
     if(gameMode == Mode.CHASE) {
@@ -218,17 +223,17 @@ public class ThePacmen extends CharacterObject {
     return getOppositeDirection(moveDirection);
   }
   
-  /** Updates the board at the given Point with the given number */
+  // Updates the board at the given Point with the given number
   private void updateBoard(final LocationPoint thePoint, final int num) {
     theBoard[thePoint.getY()][thePoint.getX()] = num;
   }
   
-  /** Returns the item at a Point given the Point and its Direction */
+  // Returns the item at a LocationPoint given the LocationPoint and its Direction
   private int itemAtPoint(final Direction theDirection, final LocationPoint thePoint) {
     return itemAtPoint(super.getNewPoint(thePoint, theDirection));
   }
   
-  /** Returns the item at a Point */
+  // Returns the item at a LocationPoint
   private int itemAtPoint(final LocationPoint thePoint) {
     if(thePoint.getX() >= theBoard.length || thePoint.getY() >= theBoard[0].length
          ||  thePoint.getX() < 0 || thePoint.getY() < 0) { 
@@ -245,32 +250,32 @@ public class ThePacmen extends CharacterObject {
     return theBoard[(int) thePoint.getY()][(int) thePoint.getX()];
   }
   
-  /** Set item at Point to a certain value */
+  // Set item at LocationPoint to a certain value
   public void setValue(final LocationPoint thePoint, final int theNum) {
     theBoard[(int) thePoint.getY()][(int) thePoint.getX()] = (int) theNum;
   }
   
-  /** Returns true if the ghost has been released from the pen */
+  // Returns true if the pacmen has been released from the pen
   public boolean isReleased() { 
     return isReleased;
   }
   
-  /** Release the ghost from the pen */
+  // Release the pacmen from the pen
   public void release() { 
     isReleased = true;
   }
   
-  /** Put the ghost in the pen */
+  //  Put the pacmen in the pen
   public void setInPen() { 
     isReleased = false;
   }
   
-  /** @return timeTheGhost was in the pen */
+  // returns time the pacmen were in the pen
   public long getPenTime() {
     return this.startPenTime;
   }
   
-  /** Returns the Point for a random corner */
+  // Returns the LocationPoint for a random corner
   private LocationPoint getCorner(final LocationPoint currentPosition) { 
     final LocationPoint newPoint = corners[theGenerator.nextInt(corners.length)];
     if(currentPosition.equals(newPoint)) {
@@ -279,7 +284,7 @@ public class ThePacmen extends CharacterObject {
     return newPoint;
   }
   
-  /** Print the board */
+  // Print the board
   public void printBoard() {
     final DecimalFormat df = new DecimalFormat("00");
     
@@ -300,7 +305,7 @@ public class ThePacmen extends CharacterObject {
     System.out.println();
   }
   
-  @Override
+  //toString
   public String toString() {
     return "PACMAN:\t" + name + "\tX: " + x + "\tY: " + y;
   }

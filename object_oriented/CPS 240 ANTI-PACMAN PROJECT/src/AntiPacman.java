@@ -2,21 +2,25 @@ import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.Image;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
+import java.awt.image.BufferedImage;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.LinkedList;
 import java.util.Queue;
 
+import javax.swing.ImageIcon;
+import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.Timer;
 
 /* Game logic */
 
 public class AntiPacman extends JPanel {
-
-  
-
 
   public static final byte WALL = 1 << 0;
   public static final byte FREE = 1 << 1;
@@ -25,10 +29,13 @@ public class AntiPacman extends JPanel {
   public static final byte PLAYERGHOST = 1 << 4;
   public static final byte PACMEN = 1 << 5;
   public static final byte OUT = 1 << 6;
+  static JFrame theFrame = new JFrame("Anti-Pacman");
+
+  
   
   private static final String SPACE = "     ";
   private final Queue<ThePacmen> pacPenQ = new LinkedList<ThePacmen>();
-  private final int board[][] = getBoard();
+  private final byte board[][] = getBoard();
   private final ThePacmen[] thePacmen = new ThePacmen[4];
   private final JLabel antiPacmanScoreLabel;
   private final JLabel pacmanLivesLabel;
@@ -38,16 +45,18 @@ public class AntiPacman extends JPanel {
   private long modeStart;
   private ThePacmen pacOne, pacTwo, pacThree, pacFour;
   private GhostPlayer ghost;
+  
   private Graphics2D theG;
   private LocationPoint pacReleasePoint;
   private LocationPoint pacSpawnPoint;
   private long ghostModeStart;
   private long hitEnergizerAt;
   private long pacReleasedAt;
-  private long antiPacmanScore = 0;
+  private long antiPacmanScore = 500;
   private int pacmanLives = 3;
   private boolean controlTouch;
   private boolean isChaseMode;
+  
   private static final int SCALE = 20;
   private static final int PACMEN_SIZE = 15;
   private static final int GHOST_SIZE = 20;
@@ -58,7 +67,7 @@ public class AntiPacman extends JPanel {
   private static final int TIME_FRIGHTENED = 10; 
   private static final int GHOST_RELEASE = 5;
   
-  /** Constructor, initializes JPanel and board */
+  // Constructor, initializes JPanels and board 
   public AntiPacman() {
     super();
     setSize(new Dimension(400, 400));
@@ -85,17 +94,19 @@ public class AntiPacman extends JPanel {
     gameMode = Mode.CHASE;
     modeStart = System.currentTimeMillis();
     
+    //call initVars method, add a keylistener for our player controls, call start() method
     initializeVariables();
     addKeyListener(new ControlListener());
     start();
   }
   
-  /** Start the other threads */
+  //start other threads
   public void start() { 
     new Thread(new GameLogic()).start();
+    
   }
   
-  /** Initalizes pacman and ghosts start locations */
+  //initialize pacmen and ghost locations
   public void initializeVariables() {
     LocationPoint pacmenStart = null;
     
@@ -120,26 +131,26 @@ public class AntiPacman extends JPanel {
     final int x = (int) pacmenStart.getX();
     final int y = (int) pacmenStart.getY();
     
-    // Left Inside
-    pacOne = new ThePacmen(Color.YELLOW, x - 2, y, board, gameMode);
+    // First pacman
+    pacOne = new ThePacmen(Color.RED, x - 2, y, board, gameMode);
     board[pacOne.getY()][pacOne.getX()] = PACMEN;
     thePacmen[0] = pacOne;
     pacPenQ.add(pacOne);
     
-    // Middle inside
-    pacTwo = new ThePacmen(Color.YELLOW, x, y, board, gameMode);
+    // Second pacman
+    pacTwo = new ThePacmen(Color.BLUE, x, y, board, gameMode);
     board[pacTwo.getY()][pacTwo.getX()] = PACMEN;
     thePacmen[1] = pacTwo;
     pacPenQ.add(pacTwo);
     pacSpawnPoint = new LocationPoint(pacTwo.getX(), pacTwo.getY());
     
-    // Right inside
-    pacThree = new ThePacmen(Color.YELLOW, x + 2, y, board, gameMode);
+    // Third pacman
+    pacThree = new ThePacmen(Color.GREEN, x + 2, y, board, gameMode);
     board[pacThree.getY()][pacThree.getX()] = PACMEN;
     thePacmen[2] = pacThree;
     pacPenQ.add(pacThree);
     
-    // Outside
+    // Fourth pacman
     pacFour = new ThePacmen(Color.YELLOW, x, y - 2, board, gameMode);
     board[pacFour.getY()][pacFour.getX()] = PACMEN;
     thePacmen[3] = pacFour;
@@ -154,19 +165,17 @@ public class AntiPacman extends JPanel {
   }
   
   
-  /** Main method, creates frame and adds game to it */
+  //main creates frame and adds game
   public static void main(String[] args) {
-    JFrame theFrame = new JFrame("Anti-Pacman");
     theFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
     theFrame.setSize(500, 500);
     
     theFrame.add(new AntiPacman());
+
     theFrame.setVisible(true);
   }
   
-  /**
-   * Returns a int representing the item that the parameter's item will hit based on the parameter item's direction
-   */
+  //Returns a int representing the item that the parameter's item will hit based on the parameter item's direction
   private int getNextMoveObject(final CharacterObject movingItem, final CharacterObject.Direction theDirection) {
     try {
       switch (theDirection) {
@@ -190,70 +199,153 @@ public class AntiPacman extends JPanel {
     }
   }
   
-  /** Return int of item in that Point */
+  // Return int of item in that LocationPoint
   public int getItemAtPoint(final LocationPoint thePoint) {
     return board[(int) thePoint.getY()][(int) thePoint.getX()];
   }
   
-  /** Moves the item parameter based on the direction parameter */
+  // Moves the item parameter based on the direction parameter
   public void moveToObject(final GhostPlayer ghost, final CharacterObject.Direction theDirection) {
     controlTouch = false;
-    
-    if (theDirection == null) {
-      return;
-    }
+    boolean Plausible = true;
     ghost.setFacingDirection(theDirection);
     final int itemInNextDirection = getNextMoveObject(ghost, theDirection);
+    byte temp = DOT;
     
-    if (itemInNextDirection == OUT) {
+    
+    //if forecasted item is a wall, we can't move there.
+    if (itemInNextDirection == WALL) {
+    	Plausible = false;
+    }
+
+    //if theDirection is null or OUT (repping our left and right warp spots), return;
+    if (theDirection == null || itemInNextDirection == OUT) {
       return;
     }
-    
-    if (itemInNextDirection == PACMEN) {
-      if (isFrightened()) {
-        eatGhost(theDirection);
-      }
-      else {
-        hitPacman();
-      }
-      return;
+
+
+    if(Plausible){
+    	//track old location for replacing items
+        int oldY, oldX;
+        oldY = ghost.getY();
+        oldX = ghost.getX();
+        
+        if (itemInNextDirection == DOT){
+        	
+        	//store the temp value of the location, move our ghost player, and then put the temp value back
+        	temp = DOT;
+        	
+  	        ghost.move(theDirection);
+  	        board[oldY][oldX] = temp;
+
+  	        board[ghost.getY()][ghost.getX()] = PLAYERGHOST;
+        }
+        if(itemInNextDirection == ENERGIZER){
+        	
+        	//same as DOT but for energizer
+        	temp = ENERGIZER;
+        	ghost.move(theDirection);    	  
+        	board[oldY][oldX] = temp;
+
+        	board[ghost.getY()][ghost.getX()] = PLAYERGHOST;
+        }
+        if(itemInNextDirection == FREE){
+        	//same as both above, but for free spaces
+        	temp = FREE;
+        	ghost.move(theDirection);    	  
+
+        	board[oldY][oldX] = temp;
+        	board[ghost.getY()][ghost.getX()] = PLAYERGHOST;
+        }
+        
+	    if (itemInNextDirection == PACMEN) {
+	  	  //if forecasted item is an enemy, checks game condition and either eats or is eaten and return;
+	  	  if (isFrightened()) {
+	            eatGhost(theDirection);
+	      }
+	      else {
+	            hitPacman();
+	      }
+	      return;
+	      
+	    }
+	    
+	    //post-logic movement
+	    board[ghost.getY()][ghost.getX()] = temp;
+	    ghost.move(theDirection);
+	    board[ghost.getY()][ghost.getX()] = PLAYERGHOST;
     }
-    
-    if (itemInNextDirection == DOT) { 
-      antiPacmanScore += 10;
-    }
-    
-    if (itemInNextDirection != WALL) {
-      board[ghost.getY()][ghost.getX()] = FREE;
-      ghost.move(theDirection);
-    }
-    
-    if (itemInNextDirection == ENERGIZER) {
-      hitEnergizerAt = System.currentTimeMillis();
-      antiPacmanScore += 100;
-      gameMode = Mode.FRIGHTENED;
-      modeStart = System.currentTimeMillis();
-    }
-    
-    board[ghost.getY()][ghost.getX()] = PLAYERGHOST;
-    
+   
+    //update labels
     updateLabels();
   }
   
-  /** Gets eaten by the Ghost if it is not frightened mode, will eat ghost otherwise */
+  //special move circumstance for ThePacmen
+  public void moveToObject(final ThePacmen thePacmen, final CharacterObject.Direction theDirection) {
+	    
+	    controlTouch = false;
+	    thePacmen.setFacingDirection(theDirection);
+	    final int itemInNextDirection = getNextMoveObject(thePacmen, theDirection);
+	    
+	    //if direction is null or warp zone for item direction, return;
+	    if (theDirection == null || itemInNextDirection == OUT || itemInNextDirection == PACMEN) {
+	      return;
+	    }
+
+	    
+	    //if AI sees our player, checks game mode, either eats or is eaten
+	    if (itemInNextDirection == PLAYERGHOST){
+	    	if (isFrightened()) {
+	            eatGhost(theDirection);
+	          }
+	          else {
+	            hitPacman();
+	          }
+	          return;
+	    }
+	    
+	    //if it sees a dot, eats the dot and lowers score
+	    if (itemInNextDirection == DOT) { 
+	      antiPacmanScore -= 5;
+	    }
+	    
+	    //as long as item != wall, pacmen can move and the spot will be freed up
+	    if (itemInNextDirection != WALL) {
+	      board[thePacmen.getY()][thePacmen.getX()] = FREE;
+	      thePacmen.move(theDirection);
+	    }
+	    
+	    //handling pacmen eating energizers
+	    if (itemInNextDirection == ENERGIZER) {
+	      hitEnergizerAt = System.currentTimeMillis();
+	      antiPacmanScore -= 20;
+	      gameMode = Mode.FRIGHTENED;
+	      modeStart = System.currentTimeMillis();
+	    }
+	    
+	    //set board location for pacmen and update labels
+	    board[thePacmen.getY()][thePacmen.getX()] = PACMEN;
+	    
+	    updateLabels();
+	  }
+  
+  //ghost eats if it is not frightened mode, ghost is eaten otherwise
   private void eatGhost() { 
     if(gameMode != Mode.FRIGHTENED) { 
       hitPacman();
       return;
     }
     
+    //find ghost point
     final LocationPoint pacmanOnGhostPoint = ghost.getPoint();
     for (ThePacmen pacman : thePacmen) {
     	
+      //check if any of the pacmen are on top of our ghost
       if (pacman.getPoint().equals(pacmanOnGhostPoint)) {
         System.out.println("KILLED:\t" + ghost.toString());
-        antiPacmanScore -= 200;
+        antiPacmanScore += 200;
         ghost.returnToStartPosition();
+        //if so, killed and back to pen
         
         updateBoard(ghost.getPoint(), FREE);
         updateBoard(ghost.getPoint(), FREE);
@@ -266,7 +358,7 @@ public class AntiPacman extends JPanel {
     }    
   }
   
-  /** If Pacman eats a ghost on frightened mode */
+  // If a ghost is on frightened mode and eaten by a pacmen*/
   private void eatGhost(final CharacterObject.Direction theDirection) {
     final LocationPoint pacmanOriginalPoint = ghost.getPoint();
     ghost.move(theDirection);
@@ -286,17 +378,18 @@ public class AntiPacman extends JPanel {
     updateBoard(pacmanOnGhostPoint, PACMEN);
   }
   
-  /** Paint method, called by repaint() */
+  //Paint method, called by repaint()
   public void paintComponent(Graphics g) {
     theG = (Graphics2D) g;
     releasePacmen();
     updateLabels();
-    drawSquares();
+	drawSquares();
+
   }
   
-  /** Thread that has most of the game logic
-    * Handles updated ghosts' board and BFA
-    * and movements */
+  /* Thread that has most of the game logic
+     Handles updated ghosts' board and BFA
+     and movements */
   private class GameLogic implements Runnable { 
     @Override
     public void run() { 
@@ -310,6 +403,11 @@ public class AntiPacman extends JPanel {
         }
         
         moveToObject(ghost, ghost.getFacingDirection());
+        moveToObject(pacOne, pacOne.getFacingDirection());
+        moveToObject(pacTwo, pacTwo.getFacingDirection());
+        moveToObject(pacThree, pacThree.getFacingDirection());
+        moveToObject(pacFour, pacFour.getFacingDirection());
+
 
 
         eatGhost();
@@ -359,18 +457,25 @@ public class AntiPacman extends JPanel {
           e.printStackTrace();
         }
         repaint();
+        if(antiPacmanScore <= 0){
+        	theFrame.dispose();
+        	System.exit(0);
+        	System.out.println("Game Over! Final Score: " + antiPacmanScore);
+        }
+        
       }
+
+ 
     }
+    
   };
   
-  /** Sets the value of the point to the value in the board[][] */
+  // Sets the value of the point to the value in the board[][]
   private void setValue(final LocationPoint thePoint, final int theValue) { 
-    board[thePoint.getY()][thePoint.getX()] = theValue;
+    board[thePoint.getY()][thePoint.getX()] = (byte) theValue;
   }
   
-  /** 
-   * If Pacman hits a ghost and it's not on frightened mode Move pacman back to initial position, decrement lives
-   */
+  //If ghost hits pacman and it's not on frightened mode Move pacmen back to initial position, decrement lives
   public void hitPacman() {
     if(gameMode == Mode.FRIGHTENED) { 
       return;
@@ -382,14 +487,14 @@ public class AntiPacman extends JPanel {
     	updateBoard(pacman.getPoint(), PLAYERGHOST);
     	pacman.returnToStartPosition();
     	updateBoard(pacman.getPoint(), FREE);
-                 
+        pacmanLives--;
         updateLabels();
         return;
       }
     }   
   }
   
-  /** Draws the entire board, including ghosts and pacman */
+  // Draws the entire board, including ghosts and pacman 
   public void drawSquares() {
     for (int i = 0; i < board.length; i++) {
       for (int y = 0; y < board[i].length; y++) {
@@ -421,7 +526,7 @@ public class AntiPacman extends JPanel {
             
           case PACMEN:
               drawBlackSquare(i, y);
-              theG.setColor(Color.YELLOW);
+              theG.setColor(Color.BLUE);
               theG.fillOval(y * SCALE, i * SCALE, PACMEN_SIZE, PACMEN_SIZE);
             break;
             
@@ -431,15 +536,17 @@ public class AntiPacman extends JPanel {
         }
       }
     }
-    for (int i = 0; i < thePacmen.length; i++) {
-      drawPacmen(thePacmen[i]);
-    }
+    
+    drawPacmen(thePacmen[0], Color.RED);
+    drawPacmen(thePacmen[1], Color.YELLOW);
+    drawPacmen(thePacmen[2], Color.BLUE);
+    drawPacmen(thePacmen[3], Color.GREEN);
+
+
   }
   
-  /**
-   * Listens to keyboard events, sets the facing direction based on those events Then moves the item in regards to the
-   * facing direction
-   */
+  //Listens to keyboard events, sets the facing direction based on those events 
+  //Then moves the item in regards to the facing direction
   private class ControlListener implements KeyListener {
     public void keyPressed(KeyEvent e) {
       
@@ -448,8 +555,18 @@ public class AntiPacman extends JPanel {
       // Direction item will move in
       CharacterObject.Direction movingDirection;
       
+      if(board[ghost.getY()][ghost.getX()] == FREE){
+          board[ghost.getY()][ghost.getX()] = FREE;
+      }
       // Current location becomes nothing for Pacman
-      board[ghost.getY()][ghost.getX()] = FREE;
+      if(board[ghost.getY()][ghost.getX()] == DOT){
+          board[ghost.getY()][ghost.getX()] = DOT;
+      }
+      if(board[ghost.getY()][ghost.getX()] == ENERGIZER){
+          board[ghost.getY()][ghost.getX()] = ENERGIZER;
+
+      }
+
       
       switch (e.getKeyCode()) {
         // LEFT
@@ -477,7 +594,6 @@ public class AntiPacman extends JPanel {
           break;
       }
       ghost.setDesiredDirection(movingDirection);
-      //moveToObject(pacman, movingDirection);
     }
 
 	@Override
@@ -494,9 +610,7 @@ public class AntiPacman extends JPanel {
   }
   
 
-  /**
-   * If it is time, removes next ghost from pen and places ghost at initial pacReleasePoint
-   */
+  //If it is time, removes next ghost from pen and places ghost at initial pacReleasePoint
   private void releasePacmen() {
     if (pacPenQ.size() != 0) {
       if ((System.currentTimeMillis() - pacReleasedAt) / 1000 == GHOST_RELEASE)
@@ -504,20 +618,17 @@ public class AntiPacman extends JPanel {
     }
   }
   
-  /**
-   * Removes ghost from its position on the board, updates ghosts coordinates to that of initial point, updates board
-   * to that value
-   */
+  //Removes ghost from its position on the board, updates ghosts coordinates to that of initial point, updates board to that value
   private void pacsLeavePen(final ThePacmen thePacmen) {
     board[thePacmen.getY()][thePacmen.getX()] = FREE;
     thePacmen.setX((int) pacReleasePoint.getX());
     thePacmen.setY((int) pacReleasePoint.getY());
-    board[thePacmen.getY()][thePacmen.getX()] = (int) (PACMEN | board[thePacmen.getY()][thePacmen.getX()]);
+    board[thePacmen.getY()][thePacmen.getX()] = (byte) (PACMEN | board[thePacmen.getY()][thePacmen.getX()]);
     pacReleasedAt = System.currentTimeMillis();
     thePacmen.release();
   }
   
-  /** Moves Ghost back to pen */
+  // Moves Ghost back to pen 
   public void pacmanRespawn(final ThePacmen theEaten) {
     if(pacPenQ.size() == 0) { 
       theEaten.setPoint(pacSpawnPoint);
@@ -531,66 +642,67 @@ public class AntiPacman extends JPanel {
     theEaten.setInPen();
   }
   
-  /** Update board location with that Pacman type */
+  // Update board location with that Pacman type
   public void updateBoard(final LocationPoint thePoint, final int theItem) {
     if(thePoint.getX() >= (board.length) || thePoint.getY() >= (board[0].length) || 
        thePoint.getX() < 0 || thePoint.getY() < 0) {
       System.out.println("UpdateBoard\t" + thePoint);
       return;
     }
-    board[thePoint.getY()][thePoint.getX()] = (int) (theItem | board[thePoint.getY()][thePoint.getX()]);
+    board[thePoint.getY()][thePoint.getX()] = (byte) (theItem | board[thePoint.getY()][thePoint.getX()]);
   }
   
-  /** @return true if chase mode */
+  // true if chase mode
   public boolean isChaseMode() {
     return gameMode == Mode.CHASE;
   }
   
-  /** Returns true if frightened */
+  // true if frightened
   private boolean isFrightened() { 
     return gameMode == Mode.FRIGHTENED;
   }
   
-  /** Draws the Pacmen in the parameter */
-  private void drawPacmen(ThePacmen thePacmen) {
-		theG.setColor(Color.YELLOW);
+  // draws pacmen AI within parameter
+  private void drawPacmen(ThePacmen thePacmen, Color theColor) {
+		theG.setColor(theColor);
         theG.fillOval(thePacmen.getX() * SCALE, thePacmen.getY() * SCALE, PACMEN_SIZE, PACMEN_SIZE);
   }
   
+  // draw Ghost char within parameter
   private void drawGhost(GhostPlayer ghost) {
 
     theG.setColor(Color.WHITE);
     theG.fillRect(ghost.getX() * SCALE, ghost.getY() * SCALE, GHOST_SIZE, GHOST_SIZE);
-	  
+
   }
   
   
-  /** Draws a black square at X and Y */
+  // Draws a black square at X and Y
   private void drawBlackSquare(int x, int y) {
     theG.setColor(Color.BLACK);
     theG.fillRect(y * SCALE, x * SCALE, SCALE, SCALE);
   }
   
-  /** Returns the board as a 2D array */
-  public static int[][] getBoard() {
+  // Returns the board as a 2D array
+  public static byte[][] getBoard() {
 	  
-	//using supporting graphics jar found online, initialize int 2d array for board getter
+	//using supporting graphics jar, initialize int 2d array for board getter
     final int[][] theMap = cs015.fnl.PacmanSupport.SupportMap.getMap();
-    final int[][] theMapint = new int[theMap.length][theMap[0].length];
+    final byte[][] theMapb = new byte[theMap.length][theMap[0].length];
     
     for(int i = 0; i < theMap.length; i++) { 
       for(int y = 0; y < theMap[i].length; y++) { 
     	  
     	
-        theMapint[(int)i][(int)y] = (byte) (1 << theMap[i][y]);
+        theMapb[(int)i][(int)y] = (byte) (1 << theMap[i][y]);
         
         
       }
     }
-    return theMapint;
+    return theMapb;
   }
   
-  /** Prints the board as a 2D array */
+  // Prints the board as a 2D array
   public void printBoard() {
     for (int y = 0; y < board.length; y++) {
       for (int i = 0; i < board[y].length; i++) {
@@ -600,7 +712,7 @@ public class AntiPacman extends JPanel {
     }
   }
   
-  /** Updates the score, num lives, ghost pen release countdown, and ghost mode labels */
+  // Updates the score, num lives, ghost pen release countdown, and ghost mode labels
   private void updateLabels() {
     antiPacmanScoreLabel.setText("Score: " + antiPacmanScore);
     pacmanLivesLabel.setText(SPACE + "Lives: " + pacmanLives + "     ");
