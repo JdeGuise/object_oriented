@@ -31,6 +31,8 @@ class Mom implements Runnable{
 	public void run() {
 		System.out.println("Mom is running.");
 		// TODO Auto-generated method stub
+		
+		
 		while(isNotDone()){			
 			Room.putCookies(); //put the cookies in the Room
 			
@@ -88,11 +90,23 @@ class Child implements Runnable{
 
 		int cookiesEaten = 0;
 		// TODO Auto-generated method stub
-		while(cookiesEaten < 20){
-			snack = Room.eatCookies((int)(Math.random()*10+1));  //eat between 1 and 10 cookies
-			System.out.println(snack + " is snack size");
+		snack = ((int)(Math.random()*10+1));  //eat between 1 and 10 cookies
+		System.out.println(name + " wants " + snack + " cookies.  We have " + Room.cookiePlate);
+
+		if(snack <= Room.cookiePlate){
+			//we have enough cookies to sate the child
+			System.out.println("Eating " + snack + " cookies.");
+			Room.eatCookies(snack);
 			cookiesEaten += snack;
+			Room.cookiePlate -= snack;
+			System.out.println(Room.cookiePlate + " cookies remaining.");
 		}
+		else{
+			//we don't have enough cookies
+			System.out.println("Not enough cookies available.  Cannot eat until mom makes more!!");
+			Mom.bakeCookies();
+		}
+		
 		System.out.println(name + " is done eating cookies.  Total eaten: " + cookiesEaten);
 
 		
