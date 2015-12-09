@@ -1,3 +1,10 @@
+//AntiPacman.java, CPS 240, John deGuise, Mi Gao, Emily Riley, 12/1/15
+
+
+// AntiPacman game - This .java contains the game constructor, the projects main,
+// 					 The while loop game logic, draw methods, 
+
+
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics;
@@ -22,6 +29,20 @@ import javax.swing.Timer;
 
 public class AntiPacman extends JPanel {
 
+  private final byte board[][] = getBoard();
+  private final Queue<ThePacmen> pacPenQ = new LinkedList<ThePacmen>();
+  private final ThePacmen[] thePacmen = new ThePacmen[4];
+  private ThePacmen pacOne, pacTwo, pacThree, pacFour;
+  private GhostPlayer ghost;
+  private Mode gameMode;
+  private long modeStart;
+  
+  static JFrame theFrame = new JFrame("Anti-Pacman");
+  private final JLabel antiPacmanScoreLabel;
+  private final JLabel pacmanLivesLabel;
+  private final JLabel ghostModeLabel;
+  private final JLabel nextReleaseLabel;
+  
   public static final byte WALL = 1 << 0;
   public static final byte FREE = 1 << 1;
   public static final byte DOT = 1 << 2;
@@ -29,43 +50,33 @@ public class AntiPacman extends JPanel {
   public static final byte PLAYERGHOST = 1 << 4;
   public static final byte PACMEN = 1 << 5;
   public static final byte OUT = 1 << 6;
-  static JFrame theFrame = new JFrame("Anti-Pacman");
-
   
-  
-  private static final String SPACE = "     ";
-  private final Queue<ThePacmen> pacPenQ = new LinkedList<ThePacmen>();
-  private final byte board[][] = getBoard();
-  private final ThePacmen[] thePacmen = new ThePacmen[4];
-  private final JLabel antiPacmanScoreLabel;
-  private final JLabel pacmanLivesLabel;
-  private final JLabel ghostModeLabel;
-  private final JLabel nextGhostReleaseLabel;
-  private Mode gameMode;
-  private long modeStart;
-  private ThePacmen pacOne, pacTwo, pacThree, pacFour;
-  private GhostPlayer ghost;
-  
-  private Graphics2D theG;
+  private Graphics2D Twodg;
   private LocationPoint pacReleasePoint;
   private LocationPoint pacSpawnPoint;
+  
   private long ghostModeStart;
   private long hitEnergizerAt;
   private long pacReleasedAt;
   private long antiPacmanScore = 500;
-  private int pacmanLives = 3;
   private boolean controlTouch;
   private boolean isChaseMode;
   
-  private static final int SCALE = 20;
+  
+  private static final int TIME_CHASE = 5; 
+  private static final int TIME_SCATTER = 7;
+  private static final int TIME_FRIGHTENED = 10; 
   private static final int PACMEN_SIZE = 15;
   private static final int GHOST_SIZE = 20;
   private static final int DOT_SIZE = 5;
   private static final int ENERGIZER_SIZE = DOT_SIZE * 2;
-  private static final int TIME_CHASE = 5; //Seconds 10
-  private static final int TIME_SCATTER = 7;
-  private static final int TIME_FRIGHTENED = 10; 
-  private static final int GHOST_RELEASE = 5;
+  private static final int PAC_RELEASE = 5;
+  private static final String SPACE = "     ";
+  private int pacmanLives = 12;
+  private static final int SCALE = 20;
+  ImageIcon icon = new ImageIcon("Clydeghost.png");
+
+
   
   // Constructor, initializes JPanels and board 
   public AntiPacman() {
@@ -87,9 +98,9 @@ public class AntiPacman extends JPanel {
     ghostModeLabel.setForeground(Color.WHITE);
     add(ghostModeLabel);
     
-    nextGhostReleaseLabel = new JLabel(SPACE + "Ghost Release", JLabel.LEFT);
-    nextGhostReleaseLabel.setForeground(Color.WHITE);
-    add(nextGhostReleaseLabel);
+    nextReleaseLabel = new JLabel(SPACE + "Pacmen Release", JLabel.LEFT);
+    nextReleaseLabel.setForeground(Color.WHITE);
+    add(nextReleaseLabel);
     
     gameMode = Mode.CHASE;
     modeStart = System.currentTimeMillis();
@@ -117,7 +128,7 @@ public class AntiPacman extends JPanel {
     	  // PlayerGhost starting location
         if (board[i][y] == PLAYERGHOST) {
         	
-          ghost = new GhostPlayer(y, i, Color.WHITE);                    
+          ghost = new GhostPlayer(y, i, icon);                    
           
         }
         
@@ -210,7 +221,7 @@ public class AntiPacman extends JPanel {
     boolean Plausible = true;
     ghost.setFacingDirection(theDirection);
     final int itemInNextDirection = getNextMoveObject(ghost, theDirection);
-    byte temp = DOT;
+    byte temp = FREE;
     
     
     //if forecasted item is a wall, we can't move there.
@@ -230,32 +241,15 @@ public class AntiPacman extends JPanel {
         oldY = ghost.getY();
         oldX = ghost.getX();
         
-        if (itemInNextDirection == DOT){
+        if (itemInNextDirection == DOT || itemInNextDirection == ENERGIZER || itemInNextDirection == FREE){
         	
         	//store the temp value of the location, move our ghost player, and then put the temp value back
-        	temp = DOT;
-        	
-  	        ghost.move(theDirection);
+        	temp = (byte) itemInNextDirection;
   	        board[oldY][oldX] = temp;
+  	        ghost.move(theDirection);
 
   	        board[ghost.getY()][ghost.getX()] = PLAYERGHOST;
-        }
-        if(itemInNextDirection == ENERGIZER){
-        	
-        	//same as DOT but for energizer
-        	temp = ENERGIZER;
-        	ghost.move(theDirection);    	  
-        	board[oldY][oldX] = temp;
 
-        	board[ghost.getY()][ghost.getX()] = PLAYERGHOST;
-        }
-        if(itemInNextDirection == FREE){
-        	//same as both above, but for free spaces
-        	temp = FREE;
-        	ghost.move(theDirection);    	  
-
-        	board[oldY][oldX] = temp;
-        	board[ghost.getY()][ghost.getX()] = PLAYERGHOST;
         }
         
 	    if (itemInNextDirection == PACMEN) {
@@ -269,11 +263,6 @@ public class AntiPacman extends JPanel {
 	      return;
 	      
 	    }
-	    
-	    //post-logic movement
-	    board[ghost.getY()][ghost.getX()] = temp;
-	    ghost.move(theDirection);
-	    board[ghost.getY()][ghost.getX()] = PLAYERGHOST;
     }
    
     //update labels
@@ -288,7 +277,7 @@ public class AntiPacman extends JPanel {
 	    final int itemInNextDirection = getNextMoveObject(thePacmen, theDirection);
 	    
 	    //if direction is null or warp zone for item direction, return;
-	    if (theDirection == null || itemInNextDirection == OUT || itemInNextDirection == PACMEN) {
+	    if (theDirection == null || itemInNextDirection == OUT || itemInNextDirection == PACMEN || itemInNextDirection == WALL) {
 	      return;
 	    }
 
@@ -344,16 +333,16 @@ public class AntiPacman extends JPanel {
       if (pacman.getPoint().equals(pacmanOnGhostPoint)) {
         System.out.println("KILLED:\t" + ghost.toString());
         antiPacmanScore += 200;
-        ghost.returnToStartPosition();
         //if so, killed and back to pen
         
         updateBoard(ghost.getPoint(), FREE);
-        updateBoard(ghost.getPoint(), FREE);
         
-        pacmanLives--;
+        ghost.returnToStartPosition();
+
+        updateBoard(ghost.getPoint(), PLAYERGHOST);
+        
         updateLabels();
         
-        pacmanRespawn(pacman);
       }
     }    
   }
@@ -380,7 +369,7 @@ public class AntiPacman extends JPanel {
   
   //Paint method, called by repaint()
   public void paintComponent(Graphics g) {
-    theG = (Graphics2D) g;
+    Twodg = (Graphics2D) g;
     releasePacmen();
     updateLabels();
 	drawSquares();
@@ -459,8 +448,15 @@ public class AntiPacman extends JPanel {
         repaint();
         if(antiPacmanScore <= 0){
         	theFrame.dispose();
-        	System.exit(0);
         	System.out.println("Game Over! Final Score: " + antiPacmanScore);
+
+        	System.exit(0);
+        }
+        if(pacmanLives <= 0){
+        	theFrame.dispose();
+        	System.out.println("You win! Final Score: " + antiPacmanScore);
+        	
+        	System.exit(0);
         }
         
       }
@@ -500,8 +496,8 @@ public class AntiPacman extends JPanel {
       for (int y = 0; y < board[i].length; y++) {
         switch (board[i][y]) {
           case WALL:
-            theG.setColor(Color.BLUE);
-            theG.fillRect(y * SCALE, i * SCALE, SCALE, SCALE);
+            Twodg.setColor(Color.BLUE);
+            Twodg.fillRect(y * SCALE, i * SCALE, SCALE, SCALE);
             break;
             
           case FREE:
@@ -510,14 +506,14 @@ public class AntiPacman extends JPanel {
             
           case DOT:
             drawBlackSquare(i, y);
-            theG.setColor(Color.WHITE);
-            theG.fillOval(y * SCALE + 5, i * SCALE + 7, DOT_SIZE, DOT_SIZE);
+            Twodg.setColor(Color.WHITE);
+            Twodg.fillOval(y * SCALE + 5, i * SCALE + 7, DOT_SIZE, DOT_SIZE);
             break;
             
           case ENERGIZER:
             drawBlackSquare(i, y);
-            theG.setColor(Color.WHITE);
-            theG.fillOval(y * SCALE + 5, i * SCALE + 7, ENERGIZER_SIZE, ENERGIZER_SIZE);
+            Twodg.setColor(Color.WHITE);
+            Twodg.fillOval(y * SCALE + 5, i * SCALE + 7, ENERGIZER_SIZE, ENERGIZER_SIZE);
             break;
             
           case PLAYERGHOST:
@@ -526,8 +522,7 @@ public class AntiPacman extends JPanel {
             
           case PACMEN:
               drawBlackSquare(i, y);
-              theG.setColor(Color.BLUE);
-              theG.fillOval(y * SCALE, i * SCALE, PACMEN_SIZE, PACMEN_SIZE);
+              Twodg.fillOval(y * SCALE, i * SCALE, PACMEN_SIZE, PACMEN_SIZE);
             break;
             
           default:
@@ -558,7 +553,6 @@ public class AntiPacman extends JPanel {
       if(board[ghost.getY()][ghost.getX()] == FREE){
           board[ghost.getY()][ghost.getX()] = FREE;
       }
-      // Current location becomes nothing for Pacman
       if(board[ghost.getY()][ghost.getX()] == DOT){
           board[ghost.getY()][ghost.getX()] = DOT;
       }
@@ -613,7 +607,7 @@ public class AntiPacman extends JPanel {
   //If it is time, removes next ghost from pen and places ghost at initial pacReleasePoint
   private void releasePacmen() {
     if (pacPenQ.size() != 0) {
-      if ((System.currentTimeMillis() - pacReleasedAt) / 1000 == GHOST_RELEASE)
+      if ((System.currentTimeMillis() - pacReleasedAt) / 1000 == PAC_RELEASE)
         pacsLeavePen(pacPenQ.remove());
     }
   }
@@ -628,7 +622,7 @@ public class AntiPacman extends JPanel {
     thePacmen.release();
   }
   
-  // Moves Ghost back to pen 
+  // Moves Pacmen back to pen 
   public void pacmanRespawn(final ThePacmen theEaten) {
     if(pacPenQ.size() == 0) { 
       theEaten.setPoint(pacSpawnPoint);
@@ -664,23 +658,23 @@ public class AntiPacman extends JPanel {
   
   // draws pacmen AI within parameter
   private void drawPacmen(ThePacmen thePacmen, Color theColor) {
-		theG.setColor(theColor);
-        theG.fillOval(thePacmen.getX() * SCALE, thePacmen.getY() * SCALE, PACMEN_SIZE, PACMEN_SIZE);
+		Twodg.setColor(theColor);
+        Twodg.fillOval(thePacmen.getX() * SCALE, thePacmen.getY() * SCALE, PACMEN_SIZE, PACMEN_SIZE);
   }
   
   // draw Ghost char within parameter
   private void drawGhost(GhostPlayer ghost) {
 
-    theG.setColor(Color.WHITE);
-    theG.fillRect(ghost.getX() * SCALE, ghost.getY() * SCALE, GHOST_SIZE, GHOST_SIZE);
-
+    icon.paintIcon(this, Twodg, ghost.getX() * SCALE, ghost.getY() * SCALE);
+    
+    
   }
   
   
   // Draws a black square at X and Y
   private void drawBlackSquare(int x, int y) {
-    theG.setColor(Color.BLACK);
-    theG.fillRect(y * SCALE, x * SCALE, SCALE, SCALE);
+    Twodg.setColor(Color.BLACK);
+    Twodg.fillRect(y * SCALE, x * SCALE, SCALE, SCALE);
   }
   
   // Returns the board as a 2D array
@@ -712,17 +706,17 @@ public class AntiPacman extends JPanel {
     }
   }
   
-  // Updates the score, num lives, ghost pen release countdown, and ghost mode labels
+  // Updates the score, num lives, pacpen release countdown, and ghost mode labels
   private void updateLabels() {
+	  
     antiPacmanScoreLabel.setText("Score: " + antiPacmanScore);
     pacmanLivesLabel.setText(SPACE + "Lives: " + pacmanLives + "     ");
     
-    final int timeToRelease = (int) GHOST_RELEASE - (int) ((System.currentTimeMillis() - pacReleasedAt) / 1000);
+    final int timeToRelease = (int) PAC_RELEASE - (int) ((System.currentTimeMillis() - pacReleasedAt) / 1000);
     if (pacPenQ.size() >= 0 && timeToRelease >= 0) {
-      nextGhostReleaseLabel.setText(SPACE + "Ghost Release: " + timeToRelease);
+      nextReleaseLabel.setText(SPACE + "Pen Release: " + timeToRelease);
     } 
-    else if (pacPenQ.size() < 0 || (GHOST_RELEASE - ((System.currentTimeMillis() - pacReleasedAt) / 1000)) < 0) {
-      nextGhostReleaseLabel.setText(SPACE + "Ghost Release: N/A");
+    else if (pacPenQ.size() < 0 || (PAC_RELEASE - ((System.currentTimeMillis() - pacReleasedAt) / 1000)) < 0) {
     }
     
     final int currentTime = (int) ((System.currentTimeMillis() - modeStart) / 1000);

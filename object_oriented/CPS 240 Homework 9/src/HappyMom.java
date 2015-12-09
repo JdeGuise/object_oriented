@@ -1,74 +1,74 @@
+//John deGuise, HappyMom.java, CPS 240 (Qi Liao), 12/9/15 5PM
+
+import java.util.List;
+import java.util.LinkedList;
 import java.util.concurrent.*;
 import java.util.concurrent.locks.*;
 
-public class HappyMom {
-	Room room = new Room();
+public class HappyMom 
+{
 	
+	//statics to keep track of our ChildList, and the amount of total cookies
+	static List<Child> childList = new LinkedList<Child>();
+	static int totalCookiesMade = 0;
+
 	public static void main(String[] args) {
-		// TODO Auto-generated method stub
-		
-		Mom mom = new Mom();
-		mom.run();
+		// TODO Auto-generated method stub		
 		Child adam = new Child("Adam");
 		Child bob = new Child("Bob");
 		Child caroline = new Child("Caroline");
 		Child darcy = new Child("Darcy");
-		
-		
-		adam.run();
-		bob.run();
-		caroline.run();
-		darcy.run();
-		
+		Mom mom = new Mom();
+		childList.add(adam);
+		childList.add(bob);
+		childList.add(caroline);
+		childList.add(darcy);
 
-			
+		mom.run();
+	
+		System.out.println("Child (Adam):   ate " + adam.cookiesEaten + " cookies.");
+		System.out.println("Child (Bob):   ate " + bob.cookiesEaten + " cookies.");
+		System.out.println("Child (Caroline):   ate " + caroline.cookiesEaten + " cookies.");
+		System.out.println("Child (Darcy):   ate " + darcy.cookiesEaten + " cookies.");
+		System.out.println("Mom: made " + totalCookiesMade + " cookies.");
+		System.out.println(Room.cookiePlate + " cookies left on the plate.");
+
 	}
+
 }
 
 class Mom implements Runnable{
-	int kitchenStrikes = 0;
 	@Override
 	public void run() {
-		System.out.println("Mom is running.");
-		// TODO Auto-generated method stub
+		System.out.println("Mom:    enters the room. " + Room.diningRoom.availablePermits() + " open seats, " + Room.cookiePlate + " cookies on the cookie plate.");
 		
-		
-		while(isNotDone()){			
+		//puts cookies if cookieplate != 10 or we didn't already have a putCookies() return 0 in the prev. cycle
+		while(continueCooking()){			
 			Room.putCookies(); //put the cookies in the Room
 			
 			try {
-				System.out.println("Mom is sleeping.");
+				System.out.println("Mom:   tired, sleeping 1 second.");
 				Thread.sleep(1000); //mom sleeps for 1 second
 			} catch (InterruptedException e) {
 				// TODO Auto-generated catch block
-				System.out.println("Mom killed herself."); 
+				System.out.println("Mom? Mom?!?!?!?!?"); 
 				e.printStackTrace();
 			}
-			System.out.println("Mom made cookies.  Reseting kitchen strikes.");
-			kitchenStrikes = 0; //reset the consecutive counter
 		}
 
 	}
 	
-	public boolean isNotDone(){
+	public boolean continueCooking(){
+
+		//boolean check method for whether we baked cookies the last cycle, and if our plate is full
 		boolean notDone = true;
 		if(Room.cookiePlate == 10){
 			notDone = false;
 		}
 		
 		if(Room.putCookies() == 0){
-			kitchenStrikes++;
 			System.out.println("We baked no cookies (cookie plate full).");
-		}
-		if(kitchenStrikes == 1){
-			System.out.println("Kids didn't want cookies once. Strike 1");
-		}
-		if(kitchenStrikes == 2){
-			System.out.println("Kids didn't want cookies two times in a row.");
-		}
-		if(kitchenStrikes == 3){
 			notDone = false;
-			System.out.println("Kids didn't want cookies three times in a row. Mom's having wine.");
 		}
 		
 		return notDone;
@@ -76,90 +76,167 @@ class Mom implements Runnable{
 	
 }
 class Child implements Runnable{
-	int snack;
+	static int snack;
 	String name;
+    int cookiesEaten = 0;
+    
+	public Child(String childName){
+		cookiesEaten = 0;
+		this.name = childName;
+		snack = -1;
+	}
 	
-	public Child(String name){
-		this.name = name;
-		snack = 0;
+	public String getName(Child child){
+		
+		return child.name;
+		
 	}
 	
 	@Override
 	public void run() {
-		System.out.println(name + " running!");
-
-		int cookiesEaten = 0;
-		// TODO Auto-generated method stub
-		snack = ((int)(Math.random()*10+1));  //eat between 1 and 10 cookies
-		System.out.println(name + " wants " + snack + " cookies.  We have " + Room.cookiePlate);
-
-		if(snack <= Room.cookiePlate){
-			//we have enough cookies to sate the child
-			System.out.println("Eating " + snack + " cookies.");
-			Room.eatCookies(snack);
-			cookiesEaten += snack;
-			Room.cookiePlate -= snack;
-			System.out.println(Room.cookiePlate + " cookies remaining.");
-		}
-		else{
-			//we don't have enough cookies
-			System.out.println("Not enough cookies available.  Cannot eat until mom makes more!!");
-			Mom.bakeCookies();
+		
+		//snack = random int of value 1-10
+	    snack = ((int)(Math.random()*10+1));  //eat between 1 and 10 cookies
+	    
+	    //if kid has had less than 20 cookies, and there's an available permit
+		if(!isDone() && Room.diningRoom.availablePermits() > 0){
+			System.out.println("Child (" + name + "): enters the room. " + Room.diningRoom.availablePermits() + " open seats, and " + Room.cookiePlate + " cookies on the plate.");
+			System.out.println("Child (" + name + "): wants " + snack + " cookies.  We have " + Room.cookiePlate);
+			
+			//if desired snacksize is bigger than the plate, we have to make more cookies.
+			if(snack > Room.cookiePlate){
+				System.out.println("CookiePlate:   Not enough cookies.  Mom must make more.");
+				Room.putCookies();
+			}
+			//else, we're good to go, so we eat, add to our running counter
+			else if(snack <= Room.cookiePlate){	
+				Room.eatCookies(snack);
+				cookiesEaten += snack;
+				System.out.println(name + ":   done eating cookies.  Total eaten:   " + cookiesEaten);
+			}
 		}
 		
-		System.out.println(name + " is done eating cookies.  Total eaten: " + cookiesEaten);
-
+		//else if the kid has had enough cookies
+		else if(isDone()){
+			System.out.println(name + ":   has had at least 20 cookies, and now diabetes.");
+		}
+		//else if there's not enough permits to get inside
+		else if(Room.diningRoom.availablePermits() == 0){
+			System.out.println(name + ":   Not enough permits.  Stopped at the door.");
+		}
 		
+		//kid is outside / sleeping
 		try {
 			System.out.println(name + " playing outside.");
 			Thread.sleep(1000); //kid plays outside for 1 second
 		} catch (InterruptedException e) {
 			// TODO Auto-generated catch block
-			System.out.println(name + " killed their self while playing. Noob"); 
+			System.out.println(name + " has errored out.  This got morbid."); 
 			e.printStackTrace();
 		}
 	}
 	
+	public boolean isDone(){
+		
+		if (cookiesEaten >= 20){
+			return true;
+		}
+		else{
+			return false;
+		}
+		
+	}
 	
-//	checkRoom(); //child first checks room
-	
+	//x wants cookies, there aren't enough, mom makes more- this method is a check for if
+	//x still needs to stay in the room
+	public boolean isFed(){
+
+		if(snack == cookiesEaten && cookiesEaten < 20){
+			return true;
+		}
+
+		return false;
+	}	
 	
 }
 class Room {
 	static int cookiePlate;
+	final static Semaphore diningRoom = new Semaphore(2);
+	final static Lock cookieLock = new ReentrantLock();
+		
 	public Room() {
-		final Semaphore semaphore = new Semaphore(2);
-		cookiePlate = 10;
+		cookiePlate = 0;
 	}
+
+	
+	//put cookies if the plate is < 10, and add to our cumulative baking count
 	public static int putCookies(){
+
 		int cookiesMade = 0;
-		System.out.println("Cookie Plate currently has " + cookiePlate + ".");
 		if(cookiePlate != 10){
-			System.out.println("Making cookies.");
+			cookieLock.lock();
 			while(cookiePlate < 10){
 				cookiePlate++;
 				cookiesMade++;
 			}
-			System.out.println("Made " + cookiesMade + " cookies.");
+			cookieLock.unlock();
+			System.out.println("Mom:   Made " + cookiesMade + " cookies.");
+			HappyMom.totalCookiesMade += cookiesMade;
 		}
 		
 		//wake children up
+		for(Child nextChild : HappyMom.childList){
+			
+			//if there's a permit, child acquires and enters
+			if(diningRoom.availablePermits() > 0){
+				try {
+					System.out.println("Child (" + nextChild.getName(nextChild) + "):   wants to enter the dining room.");
+
+					diningRoom.acquire();
+					System.out.println("Child (" + nextChild.getName(nextChild) + "):   Acquired permit. " + diningRoom.availablePermits() + " still available.");
+
+				} catch (InterruptedException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+				
+				//run child to eat cookies
+				nextChild.run();
+				//once the child has eaten every cookie they want, they must immediately leave
+				diningRoom.release();
+				System.out.println("Child (" + nextChild.getName(nextChild) + "):   Released semaphore permit. " + diningRoom.availablePermits() + " available.");
+			}
+			else{
+				//not enough permits
+				System.out.println("No room at the inn.  Skipping " + nextChild.getName(nextChild) + ".");
+			}
+		}
 		
 		
 		return cookiesMade;
 	}	
 	
-	public static int eatCookies(int snackSize){
+	public static int eatCookies(int snack){
 	//called by child thread
-		
-		//if room.contains 1 or 2 seats, can enter room
-		//else, room is occupied and child can't enter
-		
-		//if cookies remaining > amount desired, eats them
-		//if no, child waits inside room for mom thread to make more cookies
-		//child must eat exactly how many they want, all at once (can't eat 4 ready of the 5 wanted)
-		//once the child has eaten every cookie they want, they must immediately leave
+
+		if(snack <= cookiePlate){
+			
+			//we have enough cookies to sate the child
+			System.out.println("Eating " + snack + " cookies.");
+			cookiePlate -= snack;
+			System.out.println(cookiePlate + " cookies remaining.");
+			
+		}
+		else{
+			//we don't have enough cookies
+			System.out.println("Not enough cookies available.  Cannot eat until mom makes more!!");
+		}
+		if(diningRoom.availablePermits() == 0){
+			//else, room occupied and child can't enter
+			System.out.println("No more seats at the table. \n");
+		}
+
 	
-		return snackSize;
+		return snack;
 	}
 }

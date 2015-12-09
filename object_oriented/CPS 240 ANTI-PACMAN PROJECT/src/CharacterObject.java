@@ -1,8 +1,9 @@
 import java.awt.Color;
 import java.util.Random;
 
-/* CharacterObject is more descriptive than PacmanItem.  
-This class represents both ghost and pacmen sprites */
+import javax.swing.ImageIcon;
+
+//This class represents both ghost and pacmen sprites */
 
 public abstract class CharacterObject {
   
@@ -28,12 +29,14 @@ public abstract class CharacterObject {
   
   protected Color theColor;
   protected String name = "";
+  protected ImageIcon icon;
   
   //Constructor
-  public CharacterObject(final int x, final int y, final Color theColor){
+  public CharacterObject(final int x, final int y, final Color theColor, final ImageIcon icon){
     this.x = x;
     this.y = y;
     this.theColor = theColor;
+    this.icon = icon;
     this.name = getName();
     
     this.startX = x;

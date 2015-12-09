@@ -23,7 +23,6 @@ public class ThePacmen extends CharacterObject {
   private final Queue<LocationPoint> prospectivePoints = new LinkedList<LocationPoint>();
   
   private final Color startColor;
-  
   private Mode gameMode;
   private Direction randomDirection;
   
@@ -36,10 +35,11 @@ public class ThePacmen extends CharacterObject {
   private int lookFor;
   private long startPenTime;
   private boolean isReleased = false;
+
   
   // Constructor
   public ThePacmen(Color theColor, int x, int y, final byte[][] board, final Mode gameMode) {
-    super((int)x, (int)y, theColor);
+    super((int)x, (int)y, theColor, null);
     this.startColor = theColor;
     randomDistFromPacman = 0; //(int) theGenerator.nextInt(4);
     cornerPoint = getCorner(new LocationPoint(x, y));
@@ -70,7 +70,7 @@ public class ThePacmen extends CharacterObject {
     }
     
     //set AI locations and corner locations
-    this.theBoard[this.y][this.x] = PACMEN;
+    this.theBoard[pacmanP.getY()][pacmanP.getX()] = PACMEN;
     this.theBoard[cornerPoint.getY()][cornerPoint.getX()] = CORNER;
     
     //method call to move pacmen around

@@ -1,12 +1,14 @@
 import java.awt.Color;
 
+import javax.swing.ImageIcon;
+
 /* super representation of Pacman */
 
-/* will we have to make a super for player ghosts? probably */
+// ghost player class
 
 public class GhostPlayer extends CharacterObject {
-  public GhostPlayer(int x, int y, Color theColor) {
-    super(x, y, theColor);
+  public GhostPlayer(int x, int y, ImageIcon icon) {
+    super(x, y, null, icon);
   }
   
   @Override
