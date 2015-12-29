@@ -9,8 +9,7 @@ public class HappyMom
 {
 	
 	//statics to keep track of our ChildList, and the amount of total cookies
-	static List<Child> childList = new LinkedList<Child>();
-	static int totalCookiesMade = 0;
+	private static Room room = new Room();
 
 	public static void main(String[] args) {
 		// TODO Auto-generated method stub		
