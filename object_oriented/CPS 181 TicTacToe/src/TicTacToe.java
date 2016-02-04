@@ -1,4 +1,5 @@
 import java.util.Scanner;
+import java.util.InputMismatchException;
 
 public class TicTacToe {
 
@@ -67,38 +68,50 @@ public class TicTacToe {
 	public static void Player(char[][] board){
 		//declare/initialize argument for while loop
 				boolean getGuess = false;
+				String guess = "";
+
 				while(!getGuess){
-					System.out.println("Enter a row (a, b, c)");
-					String guess = input.next();		
-					//x coordinate logic
-					if(guess.equals("a")){
-						A = 0;
+					try{
+						if(guess == "") System.out.println("Enter a row (a, b, c)"); //condition helps game interface when IMEs occur
+						guess = input.next();
+						
+						//x coordinate logic
+						if(guess.equals("a")){
+							A = 0;
+						}
+						else if(guess.equals("b")){
+							A = 1;
+						}
+						else if(guess.equals("c")){
+							A = 2;
+						}
+						else{
+							getGuess = false;
+							continue;
+						}
+						//prompt user for column
+						System.out.println("Enter a column (1, 2, 3)");
+						int guess2 = input.nextInt();
+						
+						//since columns are numbers, the index is just the column# - 1
+						B = guess2 - 1;
+						
+						//if space guessed is empty, set an X in the spot, boolean sentinel value, and updated board is displayed
+						if(board[A][B] == ' '){
+							board[A][B] = p1;
+							displayBoard(board);
+							getGuess = true;
+						}
+						
+						//if space guessed is occupied, lets user know
+						else if(board[A][B] == ('O')){
+							System.out.println("Space occupied. Try again!");
+						}
 					}
-					else if(guess.equals("b")){
-						A = 1;
+					catch(InputMismatchException ime){
+						ime.printStackTrace();
 					}
-					else if(guess.equals("c")){
-						A = 2;
-					}
-					else{
-						getGuess = false;
-						continue;
-					}
-					//prompt user for column
-					System.out.println("Enter a column (1, 2, 3)");
-					int guess2 = input.nextInt();
-					//since columns are numbers, the index is just the column# - 1
-					B = guess2 - 1;
-					//if space guessed is empty, set an X in the spot, boolean sentinel value, and updated board is displayed
-					if(board[A][B] == ' '){
-						board[A][B] = p1;
-						displayBoard(board);
-						getGuess = true;
-					}
-					//if space guessed is occupied, lets user know
-					else if(board[A][B] == ('O')){
-						System.out.println("Space occupied. Try again!");
-					}
+
 				}
 			}
 	
@@ -106,8 +119,8 @@ public class TicTacToe {
 		int A = 0, B = 0;
 		char ai = 'O';
 		do{
-		A = (int)(Math.random()*3);
-		B = (int)(Math.random()*3);
+			A = (int)(Math.random()*3);
+			B = (int)(Math.random()*3);
 		}
 		while(board[A][B] != ' ');
 		board[A][B] = ai;
